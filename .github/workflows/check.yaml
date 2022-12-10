@@ -1,0 +1,96 @@
+name: Check
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  build_wheel:
+    name: Build Wheel
+    runs-on: windows-latest
+    timeout-minutes: 60
+    steps:
+      - name: Set git to use LF
+        run: |
+          git config --global core.autocrlf false
+          git config --global core.eol lf
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Cache go
+        uses: actions/cache@v3
+        with:
+          path: |
+            %LocalAppData%\go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: ${{ runner.os }}-go-
+      - name: Cache ccache
+        uses: actions/cache@v3
+        with:
+          path: |
+            ${{ github.workspace }}/.ccache
+          key: ${{ runner.os }}-ccache-${{ hashFiles('internal/core/**') }}
+          restore-keys: ${{ runner.os }}-ccache-
+      - name: Configure Toolchain
+        uses: msys2/setup-msys2@v2.12.0
+        with:
+          msystem: mingw64
+      - name: Build Milvus
+        shell: msys2 {0}
+        env:
+          CCACHE_COMPILERCHECK: content
+          CCACHE_COMPRESS: 1
+          CCACHE_COMPRESSLEVEL: 5
+          CCACHE_MAXSIZE: 2G
+          CCACHE_DIR: ${{ github.workspace }}/.ccache
+        run: |
+          # workaround for keyring error
+          if ! pacman -S --noconfirm --needed git ; then
+            pacman-key --refresh-keys
+            pacman -S --noconfirm --needed git
+          fi
+          sh run-prebuild-under-msys.sh -f
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.8'
+      - run: |
+          python -m pip install -U pip setuptools wheel
+          python -m pip install -r requirements.txt
+          python setup.py --help-commands
+          python setup.py bdist_wheel
+      - uses: actions/upload-artifact@v3
+        with:
+          name: wheel
+          path: dist/*.whl
+          retention-days: 2
+
+  acceptance_test:
+    needs:
+      - build_wheel
+    name: Acceptance Test (py${{ matrix.python_version }})
+    runs-on: windows-latest
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - python_version: "3.8"
+          - python_version: "3.9"
+          - python_version: "3.10"
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/download-artifact@v3
+        with:
+          name: wheel
+          path: dist
+      - uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python_version }}
+      - name: Run hello milvus
+        run: |
+          $x = Get-ChildItem dist\*.whl
+          pip install $x pymilvus~=2.2.0
+          cd examples
+          python example.py
