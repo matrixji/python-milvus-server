@@ -1,5 +1,7 @@
 # Python Milvus Server
 
+[![PyPI Version](https://img.shields.io/pypi/v/python-milvus-server.svg)](https://pypi.python.org/pypi/python-milvus-server)
+
 Milvus server started by python
 
 Currently, windows supported, I'll try support linux/macOS soon.
