@@ -1,3 +1,4 @@
+import sys
 import pathlib
 from os import makedirs, listdir, environ
 from os.path import join, abspath, dirname, isfile
@@ -22,8 +23,16 @@ def copy_bin_data():
     for filename in listdir(milvus_server_bin_dir):
         filepath = join(milvus_server_bin_dir, filename)
         ext_name = filepath.rsplit('.')[-1]
-        if isfile(filepath) and ext_name in ('exe', 'dll', 'so', 'dylib', filename):
+        if isfile(filepath):
             shutil.copy(filepath, join(dest_bin_dir, filename), follow_symlinks=False)
+
+def guess_plat_name():
+    if 'MILVUS_SERVER_PLATFORM' in environ:
+        return environ['MILVUS_SERVER_PLATFORM']
+    if sys.platform.lower() == 'linux':
+        return 'manylinux2014_x86_64'
+    if sys.platform.lower() == 'win32':
+        return 'win-amd64'
 
 
 class CustomBuild(build):
@@ -52,7 +61,7 @@ setup(name='python-milvus-server',
           'milvus_server': ['data/bin/*', 'data/*.template'],
       },
       options={
-          'bdist_wheel': {'plat_name': 'win-amd64'}
+          'bdist_wheel': {'plat_name': guess_plat_name()}
       },
       setup_requires=['wheel']
       )

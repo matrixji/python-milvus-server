@@ -141,8 +141,11 @@ class MilvusServerConfig:
 
     @classmethod
     def get_default_data_dir(cls):
-        default_dir = expandvars('%APPDATA%')
-        return join(default_dir, 'milvus.io', 'milvus-server')
+        if sys.platform.lower() == 'win32':
+            default_dir = expandvars('%APPDATA%')
+            return join(default_dir, 'milvus.io', 'milvus-server')
+        default_dir = expandvars('${HOME}')
+        return join(default_dir, '.milvus.io', 'milvus-server')
 
     def resolve_storage(self):
         self.base_data_dir = self.configs.get('data_dir', self.get_default_data_dir())
@@ -155,7 +158,10 @@ class MilvusServerConfig:
             makedirs(subdir, exist_ok=True)
 
         # logs
-        self.configurable_items['etcd_log_path'] = 'winfile:///' + join(logs_dir, 'etcd.log').replace('\\', '/')
+        if sys.platform.lower() == 'win32':
+            self.configurable_items['etcd_log_path'] = 'winfile:///' + join(logs_dir, 'etcd.log').replace('\\', '/')
+        else:
+            self.configurable_items['etcd_log_path'] = join(logs_dir, 'etcd.log')
         self.configurable_items['proxy_log_dir'] = logs_dir
         self.configurable_items['proxy_log_name'] = 'proxy.log'
         self.configurable_items['system_log_path'] = join(logs_dir, 'system.log')
@@ -209,7 +215,9 @@ class MilvusServer:
     def get_milvus_executable_path(cls):
         """ get where milvus
         """
-        return join(dirname(abspath(__file__)), 'data', 'bin', 'milvus.exe')
+        if sys.platform.lower() == 'win32':
+            return join(dirname(abspath(__file__)), 'data', 'bin', 'milvus.exe')
+        return join(dirname(abspath(__file__)), 'data', 'bin', 'milvus')
 
     def __enter__(self):
         self.start()
@@ -232,6 +240,9 @@ class MilvusServer:
         os.chdir(self.config.base_data_dir)
         envs = os.environ.copy()
         envs.update({'DEPLOY_MODE': 'STANDALONE'})
+        if sys.platform.lower() == 'linux':
+            envs.update({'LD_LIBRARY_PATH': f'{dirname(milvus_exe)}:{os.environ.get("LD_LIBRARY_PATH")}'})
+        print(envs)
         for name in ('stdout', 'stderr'):
             self.proc_fds[name] = open(join(self.config.base_data_dir, 'logs', f'milvus-{name}.log'), 'w')
         if self._debug:

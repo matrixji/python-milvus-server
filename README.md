@@ -28,7 +28,7 @@ or install it from the source.
 Currently, Milvus windows is build with MSYS2, so please follow below steps for build and install this Milvus server for windows.
 
 - Install MSYS2, currently please use **msys2-base-x86_64-20220603**, which could be found at [MSYS2 Install Release](https://github.com/msys2/msys2-installer/releases/tag/2022-06-03)
-- In MINGW64 console, run the prebuild scripts: `sh run-prebuild-under-msys.sh`, after that, you could find all needed dll files under folder `milvus/bin`
+- In MINGW64 console, run the prebuild scripts: `sh run-prebuild.sh`, after that, you could find all needed dll files under folder `milvus/bin`
 - Using setup.py to install `python-milvus-server`
   - `python setup.py install` to install it.
   - `python setup.py bdist_wheel` to build binary package (wheel is required).
