@@ -4,7 +4,7 @@
 
 Milvus server started by python
 
-Currently, windows supported, I'll try support linux/macOS soon.
+Currently, windows/linux with x86_64 is supported, I'll try bring macOS soon.
 
 ## Installation
 
@@ -31,7 +31,17 @@ Currently, Milvus windows is build with MSYS2, so please follow below steps for 
 - In MINGW64 console, run the prebuild scripts: `sh run-prebuild.sh`, after that, you could find all needed dll files under folder `milvus/bin`
 - Using setup.py to install `python-milvus-server`
   - `python setup.py install` to install it.
-  - `python setup.py bdist_wheel` to build binary package (wheel is required).
+  - `python setup.py bdist_wheel` to build binary package (wheel and setuptools is required).
+
+### Linux
+
+Currently, compile milvus on linux requires install some dependencies, so we create a docker for build the milvus executable.
+
+- On any linux with python3 installed, docker is installed and started.
+- run the prebuild scripts: `bash run-prebuild.sh`, after that, you should find all needed binaries under folder `milvus/bin`
+- Using setup.py to install `python-milvus-server`
+  - `python setup.py install` to install it.
+  - `python setup.py bdist_wheel` to build binary package (wheel and setuptools is required).
 
 ## Usage
 
@@ -42,7 +52,9 @@ from milvus_server import default_server
 from pymilvus import connections
 
 # Optional, if you want store all related data to specific location
-# default it wil using %APPDATA%/milvus-io/milvus-server
+# default it wil using:
+#   %APPDATA%/milvus-io/milvus-server on windows
+#   ~/.milvus-io/milvus-server on linux
 default_server.set_base_dir('D:\\test_milvus')
 
 # Optional, if you want cleanup previous data
@@ -51,7 +63,7 @@ default_server.cleanup()
 # star you milvus server
 default_server.start()
 
-# Now you could connect with localhost and the port 
+# Now you could connect with localhost and the port
 # The port is in default_server.listen_port
 connections.connect(host='127.0.0.1', port=default_server.listen_port)
 
@@ -79,7 +91,7 @@ server = MilvusServer(debug=True)
 
 ### Multiple instance
 
-Yes, we support multiple milvus server instance.
+Yes, we support multiple milvus server instance. Currently windows only(due to pid file path is hardcoded on linux)
 note: as by default they're using the same data dir, you set different data dir for each instances
 
 ```python

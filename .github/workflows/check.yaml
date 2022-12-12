@@ -4,11 +4,15 @@ on:
   push:
     branches:
       - main
+    tags:
   pull_request:
 
+env:
+  PYMILVUS_VERSION: 2.2.0
+
 jobs:
-  build_wheel:
-    name: Build Wheel
+  build_wheel_windows:
+    name: Build Wheel - Windows
     runs-on: windows-latest
     timeout-minutes: 60
     steps:
@@ -24,15 +28,15 @@ jobs:
           path: |
             %LocalAppData%\go-build
             ~/go/pkg/mod
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-          restore-keys: ${{ runner.os }}-go-
+          key: windows-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: windows-go-
       - name: Cache ccache
         uses: actions/cache@v3
         with:
           path: |
             ${{ github.workspace }}/.ccache
-          key: ${{ runner.os }}-ccache-${{ hashFiles('internal/core/**') }}
-          restore-keys: ${{ runner.os }}-ccache-
+          key: windows-ccache-${{ hashFiles('internal/core/**') }}
+          restore-keys: windows-ccache-
       - name: Configure Toolchain
         uses: msys2/setup-msys2@v2.12.0
         with:
@@ -58,32 +62,31 @@ jobs:
       - run: |
           python -m pip install -U pip setuptools wheel
           python -m pip install -r requirements.txt
-          python setup.py --help-commands
+          if ( $env:GITHUB_REF_TYPE -eq "tag" ) {
+            $env:MILVUS_SERVER_VERSION = $env:GITHUB_REF_NAME
+          }
           python setup.py bdist_wheel
       - uses: actions/upload-artifact@v3
         with:
-          name: wheel
+          name: wheel_windows
           path: dist/*.whl
-          retention-days: 2
+          retention-days: 5
 
-  acceptance_test:
+  acceptance_test_windows:
     needs:
-      - build_wheel
-    name: Acceptance Test (py${{ matrix.python_version }})
+      - build_wheel_windows
+    name: Acceptance Test Windows (py${{ matrix.python_version }})
     runs-on: windows-latest
     timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - python_version: "3.8"
-          - python_version: "3.9"
-          - python_version: "3.10"
+        python_version: ["3.8", "3.9", "3.10"]
     steps:
       - uses: actions/checkout@v2
       - uses: actions/download-artifact@v3
         with:
-          name: wheel
+          name: wheel_windows
           path: dist
       - uses: actions/setup-python@v4
         with:
@@ -91,6 +94,117 @@ jobs:
       - name: Run hello milvus
         run: |
           $x = Get-ChildItem dist\*.whl
-          pip install $x pymilvus~=2.2.0
+          pip install $x pymilvus~=${{ env.PYMILVUS_VERSION }}
           cd examples
           python example.py
+
+  build_wheel_linux:
+    name: Build Wheel - Linux
+    runs-on: ubuntu-latest
+    container:
+      image: matrixji/python-milvus-server-builder:linux_x86_64_20221212
+      env:
+        BUILD_ALREADY_IN_DOCKER: "YES"
+        HOME: /tmp
+    timeout-minutes: 60
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Cache go
+        uses: actions/cache@v3
+        with:
+          path: |
+            %LocalAppData%\go-build
+            ~/go/pkg/mod
+          key: linux-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: linux-go-
+      - name: Cache ccache
+        uses: actions/cache@v3
+        with:
+          path: |
+            ${{ github.workspace }}/.ccache
+          key: linux-ccache-${{ hashFiles('internal/core/**') }}
+          restore-keys: linux-ccache-
+      - name: Build Milvus
+        env:
+          CCACHE_COMPILERCHECK: content
+          CCACHE_COMPRESS: 1
+          CCACHE_COMPRESSLEVEL: 5
+          CCACHE_MAXSIZE: 2G
+          CCACHE_DIR: ${{ github.workspace }}/.ccache
+        run: |
+          env
+          bash run-prebuild.sh -f
+      - name: Build Wheel
+        run: |
+          python3.8 -m pip install -r requirements.txt
+          if [[ "$GITHUB_REF_TYPE" == "tag" ]] ; then
+            export MILVUS_SERVER_VERSION="$GITHUB_REF_NAME"
+          fi
+          python3.8 setup.py bdist_wheel
+      - uses: actions/upload-artifact@v3
+        with:
+          name: wheel_linux
+          path: dist/*.whl
+          retention-days: 5
+
+  acceptance_test_linux:
+    needs:
+      - build_wheel_linux
+    name: Acceptance Test ${{ matrix.os }}
+    runs-on: ubuntu-latest
+    container:
+      image: ${{ matrix.os }}
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ["ubuntu:18.04", "ubuntu:22.04", "centos:7", "fedora:36"]
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/download-artifact@v3
+        with:
+          name: wheel_linux
+          path: dist
+      - name: Install python3 for os
+        shell: bash
+        run: |
+          if [[ "${{ matrix.os }}" == "centos:7" ]] ; then
+            yum -y install epel-release
+            yum -y install python36 python36-pip python36-wheel
+          elif [[ "${{ matrix.os }}" == "fedora:36" ]] ; then
+            dnf -y install python3 python3-pip python3-wheel python3-devel gcc gcc-c++
+          elif [[ "${{ matrix.os }}" =~ "ubuntu" ]] ; then
+            apt update
+            apt -y install python3 python3-pip python3-wheel
+          fi
+      - name: Run hello milvus
+        run: |
+          python3 -m pip install -U pip
+          python3 -m pip install dist/*.whl pymilvus~=${{ env.PYMILVUS_VERSION }}
+          cd examples
+          python3 example.py
+
+  upload_pypi:
+    needs:
+      - acceptance_test_windows
+      - acceptance_test_linux
+    runs-on: ubuntu-latest
+    if: ${{ github.repository == 'matrixji/python-milvus-server' }}
+    timeout-minutes: 20
+    steps:
+      - uses: actions/download-artifact@v3
+        with:
+          path: dist
+      - name: Upload all
+        shell: bash
+        run: |
+          find dist -type f
+          if [[ "${GITHUB_REF_TYPE}" == "tag" ]] ; then
+            sudo apt update
+            sudo apt install twine
+            for file in $(find dist -type f) ; do
+              twine upload -u jibin -p ${{ secrets.PYPI_TOKEN }} $file
+            done
+          fi
+

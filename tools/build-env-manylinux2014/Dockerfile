@@ -2,8 +2,10 @@
 FROM quay.io/pypa/manylinux2014_x86_64
 
 COPY install_deps.sh /tmp
-
 RUN bash /tmp/install_deps.sh
+
+COPY install_openblas.sh /tmp
+RUN bash /tmp/install_openblas.sh
 
 ENV PATH=${PATH}:/usr/local/go/bin
 ENV BOOST_INCLUDEDIR=/usr/include/boost169
