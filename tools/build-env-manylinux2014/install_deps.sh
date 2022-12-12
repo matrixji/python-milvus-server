@@ -13,13 +13,8 @@ if ! /usr/local/go/bin/go version 2>/dev/null | grep -wq go1.18.9 ; then
     rm -fr go1.18.9.linux-amd64.tar.gz
 fi
 
-yum -y install python36-pip && \
-    pip3 install -U pip && \
-    pip3 install -U wheel setuptools && \
-    pip3 install cmake
-
 yum -y install make lcov libtool m4 autoconf automake ccache \
-    openssl-devel zlib-devel libzstd-devel libcurl-devel python3-devel \
+    openssl-devel zlib-devel libzstd-devel libcurl-devel \
     libuuid-devel pulseaudio-libs-devel \
     boost169-devel lapack-devel
 
@@ -41,3 +36,6 @@ if ! test -f /usr/local/lib/libtbb.so ; then
         cd ../../ && rm -rf tbb/
 fi
 
+# cleanup cache
+yum clean all
+rm -fr ~/.cache

@@ -3,7 +3,7 @@
 ## variables
 
 MILVUS_REPO=${MILVUS_REPO:-https://github.com/matrixji/milvus.git}
-MILVUS_BRANCH=${MILVUS_BRANCH:-2.2.0}
+MILVUS_COMMIT=${MILVUS_COMMIT:-674d932b8c3af36d5e1244e91c4f964c16aa0bc1}
 BUILD_PROXY=
 
 echo $BUILD_PROXY
@@ -46,7 +46,10 @@ fi
 
 # clone milvus
 if [[ ! -d milvus ]] ; then
-    git clone --branch ${MILVUS_BRANCH} ${MILVUS_REPO} --depth 1
+    git clone ${MILVUS_REPO} milvus
+    cd milvus
+    git checkout ${MILVUS_COMMIT}
+    cd -
 fi
 
 
@@ -83,11 +86,15 @@ function build_msys() {
 function build_linux_x86_64() {
     if [[ ${BUILD_ALREADY_IN_DOCKER} == "YES" ]] ; then
         set -e
-        cd /src/milvus
+        if [[ -d milvus ]] ; then
+            cd milvus
+        elif [[ -d /src/milvus ]] ; then
+            cd /src/milvus
+        fi
         make milvus
         cd bin
         rm -fr lib*
-
+        strip milvus
         find .. -name \*.so | xargs -I {} cp -frv {} . || :
         find .. -name \*.so\.* | xargs -I {} cp -frv {} . || :
 
