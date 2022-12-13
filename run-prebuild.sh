@@ -3,7 +3,7 @@
 ## variables
 
 MILVUS_REPO=${MILVUS_REPO:-https://github.com/matrixji/milvus.git}
-MILVUS_COMMIT=${MILVUS_COMMIT:-674d932b8c3af36d5e1244e91c4f964c16aa0bc1}
+MILVUS_COMMIT=${MILVUS_COMMIT:-pws-2.2.0-1}
 BUILD_PROXY=
 
 echo $BUILD_PROXY
