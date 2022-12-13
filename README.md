@@ -4,7 +4,7 @@
 
 Milvus server started by python
 
-Currently, windows/linux with x86_64 is supported, I'll try bring macOS soon.
+Currently, windows/linux with x86_64 is supported.
 
 ## Installation
 
