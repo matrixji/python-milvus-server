@@ -4,7 +4,7 @@
 
 Milvus server started by python
 
-Currently, windows/linux with x86_64 is supported.
+Currently, windows/linux with x86_64, and macOS with arm64 is supported.
 
 ## Installation
 
@@ -42,6 +42,11 @@ Currently, compile milvus on linux requires install some dependencies, so we cre
 - Using setup.py to install `python-milvus-server`
   - `python setup.py install` to install it.
   - `python setup.py bdist_wheel` to build binary package (wheel and setuptools is required).
+
+### macOS
+
+Similar with under Linux, but you need to install the dependencies on your macos by yourself. It could be done with scripts/install_deps.sh from [milvus](https://github.com/milvus-io/milvus).
+
 
 ## Usage
 
