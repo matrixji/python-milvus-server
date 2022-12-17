@@ -33,10 +33,12 @@ class CustomBuild(build):
     def lzma_compress(cls, dest_filepath):
         try:
             import lzma
+            os.chmod(dest_filepath, 0o755)
             with open(dest_filepath, 'rb') as raw:
                 with lzma.LZMAFile(dest_filepath + '.lzma', mode='w') as lzma_file:
                     lzma_file.write(raw.read())
-            os.unlink(dest_filepath)
+            with open(dest_filepath, 'wb') as raw:
+                raw.write(b'stub')
         except ImportError:
             pass
 

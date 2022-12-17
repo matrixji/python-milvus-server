@@ -6,7 +6,9 @@ MILVUS_REPO=${MILVUS_REPO:-https://github.com/matrixji/milvus.git}
 MILVUS_COMMIT=${MILVUS_COMMIT:-pws-2.2.0-2}
 BUILD_PROXY=
 
-echo $BUILD_PROXY
+export LANG=en_US.utf-8
+
+echo using proxy during build: $BUILD_PROXY
 
 set -e
 
@@ -52,14 +54,18 @@ if [[ ! -d milvus ]] ; then
     cd -
 fi
 
-# patch Makefile
-sed 's/-ldflags="/-ldflags="-s -w /' -i milvus/Makefile
-sed 's/-ldflags="-s -w -s -w /-ldflags="-s -w /' -i milvus/Makefile
-
-
 # get host
 OS=$(uname -s)
 ARCH=$(arch)
+
+# patch Makefile
+if [[ "${OS}" == "Darwin" ]] ; then
+    sed -i '' 's/-ldflags="/-ldflags="-s -w /' milvus/Makefile
+    sed -i '' 's/-ldflags="-s -w -s -w /-ldflags="-s -w /' milvus/Makefile
+else
+    sed 's/-ldflags="/-ldflags="-s -w /' -i milvus/Makefile
+    sed 's/-ldflags="-s -w -s -w /-ldflags="-s -w /' -i milvus/Makefile
+fi
 
 
 ## functions for each os
