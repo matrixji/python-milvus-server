@@ -4,13 +4,25 @@ import logging
 import os
 import shutil
 import sys
+import lzma
 from os import makedirs
-from os.path import join, abspath, dirname, expandvars
+from os.path import join, abspath, dirname, expandvars, isfile
 import re
 import subprocess
 import socket
 
 LOGGERS = {}
+
+
+def _initialize_data_files():
+    bin_dir = join(dirname(abspath(__file__)), 'data', 'bin')
+    files = [file[:-5] for file in os.listdir(bin_dir) if file.endswith('.lzma')]
+    files = [file for file in files if not isfile(join(bin_dir, file))]
+    for file in files:
+        with lzma.LZMAFile(join(bin_dir, f'{file}.lzma'), mode='r') as lzma_file:
+            with open(join(bin_dir, file), 'wb') as raw:
+                raw.write(lzma_file.read())
+                os.chmod(join(bin_dir, file), 0o755)
 
 
 def create_logger(usage: str = 'null'):
@@ -240,9 +252,8 @@ class MilvusServer:
         os.chdir(self.config.base_data_dir)
         envs = os.environ.copy()
         envs.update({'DEPLOY_MODE': 'STANDALONE'})
-        if sys.platform.lower() == 'linux':
+        if sys.platform.lower() in ('linux', 'darwin'):
             envs.update({'LD_LIBRARY_PATH': f'{dirname(milvus_exe)}:{os.environ.get("LD_LIBRARY_PATH")}'})
-        print(envs)
         for name in ('stdout', 'stderr'):
             self.proc_fds[name] = open(join(self.config.base_data_dir, 'logs', f'milvus-{name}.log'), 'w')
         if self._debug:
@@ -293,5 +304,6 @@ class MilvusServer:
         self.config.logger = create_logger('debug' if val else 'null')
 
 
+_initialize_data_files()
 default_server = MilvusServer()
 debug_server = MilvusServer(MilvusServerConfig(), debug=True)

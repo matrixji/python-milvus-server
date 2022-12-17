@@ -3,7 +3,7 @@
 ## variables
 
 MILVUS_REPO=${MILVUS_REPO:-https://github.com/matrixji/milvus.git}
-MILVUS_COMMIT=${MILVUS_COMMIT:-pws-2.2.0-1}
+MILVUS_COMMIT=${MILVUS_COMMIT:-pws-2.2.0-2}
 BUILD_PROXY=
 
 echo $BUILD_PROXY
@@ -52,10 +52,14 @@ if [[ ! -d milvus ]] ; then
     cd -
 fi
 
+# patch Makefile
+sed 's/-ldflags="/-ldflags="-s -w /' -i milvus/Makefile
+sed 's/-ldflags="-s -w -s -w /-ldflags="-s -w /' -i milvus/Makefile
+
 
 # get host
 OS=$(uname -s)
-ARCH=$(uname -i)
+ARCH=$(arch)
 
 
 ## functions for each os
@@ -94,29 +98,27 @@ function build_linux_x86_64() {
         make milvus
         cd bin
         rm -fr lib*
-        strip milvus
-        find .. -name \*.so | xargs -I {} cp -frv {} . || :
-        find .. -name \*.so\.* | xargs -I {} cp -frv {} . || :
 
-        for x in $(ldd milvus | awk "{print $1}") ; do
-            if [[ $x =~ libc.* ]] ; then
+        for x in $(ldd milvus | awk '{print $1}') ; do
+            if [[ $x =~ libc.so.* ]] ; then
                 :
-            elif [[ $x =~ libdl.* ]] ; then
+            elif [[ $x =~ libdl.so.* ]] ; then
                 :
-            elif [[ $x =~ libm.* ]] ; then
+            elif [[ $x =~ libm.so.* ]] ; then
                 :
-            elif [[ $x =~ librt.* ]] ; then
+            elif [[ $x =~ librt.so.* ]] ; then
                 :
-            elif [[ $x =~ libpthread.* ]] ; then
+            elif [[ $x =~ libpthread.so.* ]] ; then
                 :
-            elif [[ $x =~ libstdc++.* ]] ; then
+            elif [[ $x =~ libstdc.* ]] ; then
                 :
             elif test -f $x ; then
                 :
             else
-                for p in /lib64 /usr/lib64 /usr/local/lib64 /usr/local/lib /usr/lib64/boost169 ; do
+                echo $x
+                for p in ../internal/core/output/lib ../internal/core/output/lib64 /lib64 /usr/lib64 /usr/local/lib64 /usr/local/lib /usr/lib64/boost169 ; do
                     if test -f $p/$x && ! test -f $x ; then
-                       file=$p/$x
+                        file=$p/$x
                         while test -L $file ; do
                             file=$(dirname $file)/$(readlink $file)
                         done
@@ -143,6 +145,44 @@ function build_linux_x86_64() {
     fi
 }
 
+build_macosx_arm64() {
+    cd milvus
+    make
+
+    # resolve dependencies for milvus
+    cd bin
+    rm -fr lib*
+    files=("milvus")
+    while true ; do
+        new_files=()
+        for file in ${files[@]} ; do
+            for line in $(otool -L $file | grep -v ${file}: | grep -v /usr/lib | grep -v /System/Library | awk '{print $1}') ; do
+                filename=$(basename $line)
+                if [[ -f ${filename} ]] ; then
+                    continue
+                fi
+                find_in_build_dir=$(find ../cmake_build -name $filename)
+                if [[ ! -z "$find_in_build_dir" ]] ; then
+                    cp -frv ${find_in_build_dir} ${filename}
+                    new_files+=( "${filename}" )
+                    continue
+                fi
+                if [[ -f $line ]] ; then
+                    cp -frv $line $filename
+                    new_files+=( "${filename}" )
+                    continue
+                fi
+            done
+        done
+        if [[ ${#new_files[@]} -eq 0 ]] ; then
+            break
+        fi
+        for file in ${new_files[@]} ; do
+            files+=( ${file} )
+        done
+    done
+}
+
 
 
 case $OS in
@@ -151,6 +191,9 @@ case $OS in
         ;;
     MINGW*)
         build_msys
+        ;;
+    Darwin)
+        build_macosx_${ARCH}
         ;;
     *)
         ;;
