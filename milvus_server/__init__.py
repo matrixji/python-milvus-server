@@ -17,7 +17,7 @@ LOGGERS = {}
 def _initialize_data_files():
     bin_dir = join(dirname(abspath(__file__)), 'data', 'bin')
     files = [file[:-5] for file in os.listdir(bin_dir) if file.endswith('.lzma')]
-    files = [file for file in files if not isfile(join(bin_dir, file))]
+    files = [file for file in files if not isfile(join(bin_dir, file)) or os.stat(join(bin_dir, file)).st_size < 10]
     for file in files:
         with lzma.LZMAFile(join(bin_dir, f'{file}.lzma'), mode='r') as lzma_file:
             with open(join(bin_dir, file), 'wb') as raw:
