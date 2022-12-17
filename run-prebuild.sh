@@ -79,7 +79,7 @@ function build_msys() {
     export GOROOT=/mingw64/lib/go
     go version
 
-    make milvus
+    make -j $(nproc) milvus
 
     # resolve all dll for milvus.exe
     cd bin
@@ -101,7 +101,7 @@ function build_linux_x86_64() {
         elif [[ -d /src/milvus ]] ; then
             cd /src/milvus
         fi
-        make milvus
+        make -j $(nproc) milvus
         cd bin
         rm -fr lib*
 
@@ -153,7 +153,7 @@ function build_linux_x86_64() {
 
 build_macosx_arm64() {
     cd milvus
-    make
+    make -j $(sysctl -n hw.physicalcpu) milvus
 
     # resolve dependencies for milvus
     cd bin
