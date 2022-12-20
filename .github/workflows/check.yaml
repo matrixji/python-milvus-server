@@ -103,7 +103,7 @@ jobs:
     name: Build Wheel - Linux
     runs-on: ubuntu-latest
     container:
-      image: matrixji/python-milvus-server-builder:linux_x86_64_20221212
+      image: matrixji/python-milvus-server-builder:linux_x86_64_20221221
       env:
         BUILD_ALREADY_IN_DOCKER: "YES"
         HOME: /tmp
