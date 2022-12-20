@@ -79,7 +79,7 @@ function build_msys() {
     export GOROOT=/mingw64/lib/go
     go version
 
-    mingw32-make -j $(nproc) milvus
+    make -j $(nproc) milvus
 
     # resolve all dll for milvus.exe
     cd bin
