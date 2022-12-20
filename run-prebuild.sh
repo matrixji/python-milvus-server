@@ -3,7 +3,7 @@
 ## variables
 
 MILVUS_REPO=${MILVUS_REPO:-https://github.com/matrixji/milvus.git}
-MILVUS_COMMIT=${MILVUS_COMMIT:-pms-2.2.1}
+MILVUS_COMMIT=${MILVUS_COMMIT:-2.2.0}
 BUILD_PROXY=
 
 export LANG=en_US.utf-8
@@ -79,7 +79,7 @@ function build_msys() {
     export GOROOT=/mingw64/lib/go
     go version
 
-    make -j $(nproc) milvus
+    mingw32-make -j $(nproc) milvus
 
     # resolve all dll for milvus.exe
     cd bin
