@@ -252,8 +252,10 @@ class MilvusServer:
         os.chdir(self.config.base_data_dir)
         envs = os.environ.copy()
         envs.update({'DEPLOY_MODE': 'STANDALONE'})
-        if sys.platform.lower() in ('linux', 'darwin'):
+        if sys.platform.lower() == 'linux':
             envs.update({'LD_LIBRARY_PATH': f'{dirname(milvus_exe)}:{os.environ.get("LD_LIBRARY_PATH")}'})
+        if sys.platform.lower() == 'darwin':
+            envs.update({'DYLD_LIBRARY_PATH': f'{dirname(milvus_exe)}:{os.environ.get("DYLD_LIBRARY_PATH")}'})
         for name in ('stdout', 'stderr'):
             self.proc_fds[name] = open(join(self.config.base_data_dir, 'logs', f'milvus-{name}.log'), 'w')
         if self._debug:
