@@ -103,7 +103,7 @@ jobs:
     name: Build Wheel - Linux
     runs-on: ubuntu-latest
     container:
-      image: matrixji/python-milvus-server-builder:linux_x86_64_20221212
+      image: matrixji/python-milvus-server-builder:manylinux2004-1
       env:
         BUILD_ALREADY_IN_DOCKER: "YES"
         HOME: /tmp
@@ -119,6 +119,13 @@ jobs:
             ~/go/pkg/mod
           key: linux-go-${{ hashFiles('run-prebuild.sh') }}
           restore-keys: linux-go-
+      - name: Cache conan
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.conan/data
+          key: linux-conan-${{ hashFiles('run-prebuild.sh') }}
+          restore-keys: linux-conan-
       - name: Cache ccache
         uses: actions/cache@v3
         with:

@@ -15,7 +15,8 @@ fi
 
 yum -y install make lcov libtool m4 autoconf automake ccache \
     openssl-devel zlib-devel libzstd-devel libcurl-devel \
-    libuuid-devel pulseaudio-libs-devel \
+    libuuid-devel pulseaudio-libs-devel libatomic \
+    devtoolset-7-gcc devtoolset-7-gcc-c++ devtoolset-7-gcc-gfortran \
     boost169-devel lapack-devel
 
 export PATH=${PATH}:/usr/local/go/bin

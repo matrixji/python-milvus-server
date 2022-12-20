@@ -7,9 +7,6 @@ MILVUS_COMMIT=${MILVUS_COMMIT:-master}
 BUILD_PROXY=
 
 export LANG=en_US.utf-8
-
-echo using proxy during build: $BUILD_PROXY
-
 set -e
 
 BUILD_FORCE=NO
@@ -35,6 +32,8 @@ while getopts "fr:b:p:" arg; do
         ;;
     esac
 done
+
+echo using proxy during build: $BUILD_PROXY
 
 
 if [[ ${BUILD_FORCE} == "YES" ]] ; then
@@ -96,6 +95,7 @@ function build_msys() {
 function build_linux_x86_64() {
     if [[ ${BUILD_ALREADY_IN_DOCKER} == "YES" ]] ; then
         set -e
+
         if [[ -d milvus ]] ; then
             cd milvus
         elif [[ -d /src/milvus ]] ; then
@@ -115,8 +115,6 @@ function build_linux_x86_64() {
             elif [[ $x =~ librt.so.* ]] ; then
                 :
             elif [[ $x =~ libpthread.so.* ]] ; then
-                :
-            elif [[ $x =~ libstdc.* ]] ; then
                 :
             elif test -f $x ; then
                 :
@@ -142,12 +140,12 @@ function build_linux_x86_64() {
             docker_run_proxys=" -e http_proxy=${BUILD_PROXY} -e https_proxy=${BUILD_PROXY} "
         fi
         # build docker for builder
-        ## docker build -t python-milvus-server-builder:latest ${docker_build_proxys} tools/build-env-manylinux2014
+        ## docker build -t matrixji/python-milvus-server-builder:latest ${docker_build_proxys} tools/build-env-manylinux2014
         mkdir -p tmp
         docker run -u $(id -u):$(id -g) -e HOME=/tmp -e BUILD_ALREADY_IN_DOCKER=YES --rm ${docker_run_proxys} \
             -v$(pwd):/src \
             -v$(pwd)/tmp:/tmp \
-            matrixji/python-milvus-server-builder:linux_x86_64_20221212 bash -c "cd /src && bash run-prebuild.sh"
+            matrixji/python-milvus-server-builder:manylinux2004-1 bash -c "cd /src && bash run-prebuild.sh"
     fi
 }
 
