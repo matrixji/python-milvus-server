@@ -3,7 +3,7 @@
 ## variables
 
 MILVUS_REPO=${MILVUS_REPO:-https://github.com/matrixji/milvus.git}
-MILVUS_COMMIT=${MILVUS_COMMIT:-pms-2.2.1}
+MILVUS_COMMIT=${MILVUS_COMMIT:-master}
 BUILD_PROXY=
 
 export LANG=en_US.utf-8
