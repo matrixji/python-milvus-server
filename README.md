@@ -16,7 +16,7 @@ pip install python-milvus-server
 
 or with a specific version
 ```
-pip install python-milvus-server~=2.2.0
+pip install python-milvus-server==2.2.1
 ```
 
 or install it from the source.
