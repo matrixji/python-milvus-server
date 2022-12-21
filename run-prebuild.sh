@@ -119,8 +119,6 @@ function build_linux_x86_64() {
                 :
             elif [[ $x =~ libpthread.so.* ]] ; then
                 :
-            elif [[ $x =~ libstdc.* ]] ; then
-                :
             elif test -f $x ; then
                 :
             else
@@ -150,7 +148,7 @@ function build_linux_x86_64() {
         docker run -u $(id -u):$(id -g) -e HOME=/tmp -e BUILD_ALREADY_IN_DOCKER=YES --rm ${docker_run_proxys} \
             -v$(pwd):/src \
             -v$(pwd)/tmp:/tmp \
-            matrixji/python-milvus-server-builder:linux_x86_64_20221221 bash -c "cd /src && bash run-prebuild.sh"
+            matrixji/python-milvus-server-builder:manylinux2004-1 bash -c "cd /src && bash run-prebuild.sh"
     fi
 }
 
