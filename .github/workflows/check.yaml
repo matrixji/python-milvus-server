@@ -4,12 +4,13 @@ on:
   push:
     branches:
       - main
+      - 2.*
     tags:
       - 'v*'
   pull_request:
 
 env:
-  PYMILVUS_VERSION: 2.2.0
+  PYMILVUS_VERSION: "2.2"
 
 jobs:
   build_wheel_windows:
