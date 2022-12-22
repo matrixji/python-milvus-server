@@ -99,9 +99,6 @@ function build_msys() {
 function build_linux_x86_64() {
     if [[ ${BUILD_ALREADY_IN_DOCKER} == "YES" ]] ; then
         set -e
-        # manylinux 2004 has devtoolset-10, we using 7 instead
-        source /opt/rh/devtoolset-7/enable
-        export PATH=$(echo $PATH | sed s#/opt/rh/devtoolset-10/root/usr/bin:##)
 
         if [[ -d milvus ]] ; then
             cd milvus
