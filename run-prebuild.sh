@@ -2,8 +2,9 @@
 
 ## variables
 
-MILVUS_REPO=${MILVUS_REPO:-https://github.com/matrixji/milvus.git}
-MILVUS_COMMIT=${MILVUS_COMMIT:-master}
+MILVUS_REPO=${MILVUS_REPO:-https://github.com/milvus-io/milvus.git}
+MILVUS_COMMIT=${MILVUS_COMMIT:-19387754dc2600728824607b383a1b8eb474deab}
+MILVUS_PATCH_NAME=${MILVUS_PATCH_NAME:-master}
 BUILD_PROXY=
 
 export LANG=en_US.utf-8
@@ -50,12 +51,15 @@ if [[ ! -d milvus ]] ; then
     git clone ${MILVUS_REPO} milvus
     cd milvus
     git checkout ${MILVUS_COMMIT}
+    # apply milvus patch
+    patch -p1 < ../milvus_patches/${MILVUS_PATCH_NAME}.patch
     cd -
 fi
 
 # get host
 OS=$(uname -s)
 ARCH=$(arch)
+
 
 # patch Makefile
 if [[ "${OS}" == "Darwin" ]] ; then
