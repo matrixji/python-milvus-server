@@ -57,7 +57,7 @@ jobs:
             pacman-key --refresh-keys
             pacman -S --noconfirm --needed git
           fi
-          pacman -S patch
+          pacman -Sy patch
           sh run-prebuild.sh -f
       - uses: actions/setup-python@v4
         with:
