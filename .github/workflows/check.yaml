@@ -53,11 +53,10 @@ jobs:
           CCACHE_DIR: ${{ github.workspace }}/.ccache
         run: |
           # workaround for keyring error
-          if ! pacman -S --noconfirm --needed git ; then
+          if ! pacman -S --noconfirm --needed git patch; then
             pacman-key --refresh-keys
-            pacman -S --noconfirm --needed git
+            pacman -S --noconfirm --needed git patch
           fi
-          pacman -Sy patch
           sh run-prebuild.sh -f
       - uses: actions/setup-python@v4
         with:
