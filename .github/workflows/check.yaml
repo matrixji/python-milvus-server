@@ -28,8 +28,8 @@ jobs:
         uses: actions/cache@v3
         with:
           path: |
-            %LocalAppData%\go-build
-            ~/go/pkg/mod
+            ~\AppData\Local\go-build
+            ~\go\pkg\mod
           key: windows-go-${{ hashFiles('run-prebuild.sh') }}
           restore-keys: windows-go-
       - name: Cache ccache
@@ -116,7 +116,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: |
-            %LocalAppData%\go-build
+            ~/.cache/go-build
             ~/go/pkg/mod
           key: linux-go-${{ hashFiles('run-prebuild.sh') }}
           restore-keys: linux-go-

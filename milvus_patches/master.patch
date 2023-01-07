@@ -1,8 +1,8 @@
 diff --git a/internal/core/CMakeLists.txt b/internal/core/CMakeLists.txt
-index e4e469e1d..703632058 100644
+index d3d084fef..a11f61fea 100644
 --- a/internal/core/CMakeLists.txt
 +++ b/internal/core/CMakeLists.txt
-@@ -36,6 +36,10 @@ add_definitions(-DELPP_THREAD_SAFE)
+@@ -27,6 +27,10 @@ add_definitions(-DELPP_THREAD_SAFE)
  set(CMAKE_POSITION_INDEPENDENT_CODE ON)
  message( STATUS "Building using CMake version: ${CMAKE_VERSION}" )
  
@@ -115,10 +115,10 @@ index 75f81c43e..ffd758812 100644
 +	return os.OpenFile(u.Path[1:], os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0600)
 +}
 diff --git a/scripts/core_build.sh b/scripts/core_build.sh
-index ac013207a..fadc396aa 100755
+index 74372caac..e8e41b84c 100755
 --- a/scripts/core_build.sh
 +++ b/scripts/core_build.sh
-@@ -196,8 +196,49 @@ case "${unameOut}" in
+@@ -202,8 +202,49 @@ case "${unameOut}" in
        conan install ${CPP_SRC_DIR} --install-folder conan --build=missing -s compiler.libcxx=libstdc++11 || { echo 'conan install failed'; exit 1; }
      fi 
      ;;
@@ -170,11 +170,11 @@ index ac013207a..fadc396aa 100755
      ;;
  esac
  
-@@ -217,6 +258,7 @@ ${CMAKE_EXTRA_ARGS} \
- -DCUSTOM_THIRDPARTY_DOWNLOAD_PATH=${CUSTOM_THIRDPARTY_PATH} \
+@@ -224,6 +265,7 @@ ${CMAKE_EXTRA_ARGS} \
  -DEMBEDDED_MILVUS=${EMBEDDED_MILVUS} \
  -DBUILD_DISK_ANN=${BUILD_DISK_ANN} \
-+-DCONAN_LIBS=${CONAN_LIBS}
+ -DUSE_ASAN=${USE_ASAN} \
++-DCONAN_LIBS=${CONAN_LIBS} \
  ${CPP_SRC_DIR}"
  
  echo ${CMAKE_CMD}
