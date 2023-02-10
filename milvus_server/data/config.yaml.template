@@ -157,15 +157,15 @@ proxy:
     timeTick:
       bufSize: 512
   maxNameLength: 255  # Maximum length of name for a collection or alias
-  maxFieldNum: 256     # Maximum number of fields in a collection
+  maxFieldNum: 64     # Maximum number of fields in a collection.
+  # As of today (2.2.0 and after) it is strongly DISCOURAGED to set maxFieldNum >= 64.
+  # So adjust at your risk!
   maxDimension: 32768 # Maximum dimension of a vector
-  maxShardNum: 256 # Maximum number of shards in a collection
+  # It's strongly DISCOURAGED to set `maxShardNum` > 64.
+  maxShardNum: 64 # Maximum number of shards in a collection
   maxTaskNum: 1024 # max task number of proxy task queue
   # please adjust in embedded Milvus: false
-  ginLogging: false # Whether to produce gin logs.
-  accessLog:
-    localPath: {{ proxy_log_dir }}
-    filename: {{ proxy_log_name }}
+  ginLogging: true # Whether to produce gin logs.
   grpc:
     serverMaxRecvSize: 67108864 # 64M
     serverMaxSendSize: 67108864 # 64M
@@ -186,7 +186,6 @@ queryCoord:
   channelTaskTimeout: 60000 # 1 minute
   segmentTaskTimeout: 120000 # 2 minute
   distPullInterval: 500
-  heartbeatAvailableInterval: 10000 # 10s, Only QueryNodes which fetched heartbeats within the duration are available
   loadTimeoutSeconds: 600
   checkHandoffInterval: 5000
   taskMergeCap: 16
@@ -200,6 +199,7 @@ queryNode:
   loadMemoryUsageFactor: 3 # The multiply factor of calculating the memory usage while loading segments
   enableDisk: true # enable querynode load disk index, and search on disk index
   maxDiskUsagePercentage: 95
+  gracefulStopTimeout: 30
 
   stats:
     publishInterval: 1000 # Interval for querynode to report node information (milliseconds)
@@ -250,6 +250,9 @@ indexCoord:
   gc:
     interval: 600 # gc interval in seconds
 
+  scheduler:
+    interval: 1000 # scheduler interval in Millisecond
+
 indexNode:
   port: {{ index_node_port }}
   enableDisk: true # enable index node build disk vector index
@@ -266,7 +269,7 @@ dataCoord:
   enableActiveStandby: false  # Enable active-standby
 
   channel:
-    maxWatchDuration: 60 # Timeout on watching channels (in seconds). Default 60 seconds.
+    maxWatchDuration: 600 # Timeout on watching channels (in seconds). Default 600 seconds.
 
   segment:
     maxSize: 512 # Maximum size of a segment in MB
@@ -281,11 +284,14 @@ dataCoord:
     # `minSizeFromIdleToSealed`, Milvus will automatically seal it.
     maxIdleTime: 600 # The max idle time of segment in seconds, 10*60.
     minSizeFromIdleToSealed: 16 # The min size in MB of segment which can be idle from sealed.
+    # The max number of binlog file for one segment, the segment will be sealed if
+    # the number of binlog file reaches to max value.
+    maxBinlogFileNumber: 32
     smallProportion: 0.5 # The segment is considered as "small segment" when its # of rows is smaller than
     # (smallProportion * segment max # of rows).
-    compactableProportion: 0.5 # A compaction will happen on small segments if the segment after compaction will have
+    compactableProportion: 0.85 # A compaction will happen on small segments if the segment after compaction will have
     # over (compactableProportion * segment max # of rows) rows.
-    expansionRate: 1.25 # During compaction, the size of segment # of rows is able to exceed segment max # of rows by (expansionRate-1) * 100%.
+    # MUST BE GREATER THAN OR EQUAL TO <smallProportion>!!!
 
   compaction:
     enableAutoCompaction: true
@@ -293,7 +299,7 @@ dataCoord:
   gc:
     interval: 3600 # gc interval in seconds
     missingTolerance: 86400 # file meta missing tolerance duration in seconds, 60*24
-    dropTolerance: 86400 # file belongs to dropped entity tolerance duration in seconds, 60*24
+    dropTolerance: 3600 # file belongs to dropped entity tolerance duration in seconds
 
 
 dataNode:
@@ -376,7 +382,7 @@ common:
 
   defaultPartitionName: "_default"  # default partition name for a collection
   defaultIndexName: "_default_idx"  # default index name
-  retentionDuration: 86400 # time travel reserved time, insert/delete will not be cleaned in this period. 1 days in seconds
+  retentionDuration: 0     # time travel reserved time, insert/delete will not be cleaned in this period. disable it by default
   entityExpiration: -1     # Entity expiration in seconds, CAUTION make sure entityExpiration >= retentionDuration and -1 means never expire
 
   gracefulTime: 5000 # milliseconds. it represents the interval (in ms) by which the request arrival time needs to be subtracted in the case of Bounded Consistency.
@@ -405,8 +411,8 @@ common:
     authorizationEnabled: false
     # The superusers will ignore some system check processes,
     # like the old password verification when updating the credential
-    superUsers:
-      - "root"
+    # superUsers:
+    #  - "root"
     # tls mode values [0, 1, 2]
     # 0 is close, 1 is one-way authentication, 2 is two-way authentication.
     tlsMode: 0
