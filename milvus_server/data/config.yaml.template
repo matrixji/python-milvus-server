@@ -349,9 +349,9 @@ grpc:
 
 # Configure the proxy tls enable.
 tls:
-  serverPemPath: configs/cert/server.pem
-  serverKeyPath: configs/cert/server.key
-  caPemPath: configs/cert/ca.pem
+  serverPemPath: {{ server_pem_path: server.pem }}
+  serverKeyPath: {{ server_key_path: server.key }}
+  caPemPath: {{ ca_pem_path: ca.pem }}
 
 
 common:
@@ -408,14 +408,14 @@ common:
   storageType: local
 
   security:
-    authorizationEnabled: false
+    authorizationEnabled: {{ authorization_enabled: false }}
     # The superusers will ignore some system check processes,
     # like the old password verification when updating the credential
     # superUsers:
     #  - "root"
     # tls mode values [0, 1, 2]
     # 0 is close, 1 is one-way authentication, 2 is two-way authentication.
-    tlsMode: 0
+    tlsMode: {{ tls_mode: 0 }}
 
   session:
     ttl: 60 # ttl value when session granting a lease to register service

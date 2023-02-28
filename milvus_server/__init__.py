@@ -1,8 +1,10 @@
 """Milvus Server
 """
+from argparse import ArgumentParser
 import logging
 import os
 import shutil
+import signal
 import sys
 import lzma
 from os import makedirs
@@ -10,14 +12,20 @@ from os.path import join, abspath, dirname, expandvars, isfile
 import re
 import subprocess
 import socket
+from time import sleep
+
+__version__ = '2.2.3'
+
 
 LOGGERS = {}
 
 
-def _initialize_data_files():
+def _initialize_data_files() -> None:
     bin_dir = join(dirname(abspath(__file__)), 'data', 'bin')
-    files = [file[:-5] for file in os.listdir(bin_dir) if file.endswith('.lzma')]
-    files = [file for file in files if not isfile(join(bin_dir, file)) or os.stat(join(bin_dir, file)).st_size < 10]
+    files = [file[:-5]
+             for file in os.listdir(bin_dir) if file.endswith('.lzma')]
+    files = [file for file in files if not isfile(
+        join(bin_dir, file)) or os.stat(join(bin_dir, file)).st_size < 10]
     for file in files:
         with lzma.LZMAFile(join(bin_dir, f'{file}.lzma'), mode='r') as lzma_file:
             with open(join(bin_dir, file), 'wb') as raw:
@@ -25,7 +33,7 @@ def _initialize_data_files():
                 os.chmod(join(bin_dir, file), 0o755)
 
 
-def create_logger(usage: str = 'null'):
+def _create_logger(usage: str = 'null') -> logging.Logger:
     usage = usage.lower()
     if usage in LOGGERS:
         return LOGGERS[usage]
@@ -35,7 +43,8 @@ def create_logger(usage: str = 'null'):
     else:
         logger.setLevel(logging.DEBUG)
         handler = logging.StreamHandler(sys.stderr)
-        formatter = logging.Formatter('%(asctime)s [%(levelname)s] %(filename)s:%(lineno)d: %(message)s')
+        formatter = logging.Formatter(
+            '%(asctime)s [%(levelname)s] %(filename)s:%(lineno)d: %(message)s')
         logger.addHandler(handler)
         handler.setFormatter(formatter)
     LOGGERS[usage] = logger
@@ -53,9 +62,10 @@ class MilvusServerConfig:
 
             data_dir(str, optional): base data directory for log and data
         """
-        self.base_data_dir = None
+        self.base_data_dir = ''
         self.configs: dict = kwargs
-        self.logger = create_logger('debug' if kwargs.get('debug', False) else 'null')
+        self.logger = _create_logger(
+            'debug' if kwargs.get('debug', False) else 'null')
 
         self.template_file: str = kwargs.get('template', None)
         self.template_text: str = ''
@@ -74,7 +84,8 @@ class MilvusServerConfig:
         """ load config template for milvus server
         """
         if not self.template_file:
-            self.template_file = join(dirname(abspath(__file__)), 'data', 'config.yaml.template')
+            self.template_file = join(
+                dirname(abspath(__file__)), 'data', 'config.yaml.template')
         with open(self.template_file, 'r', encoding='utf-8') as template:
             self.template_text = template.read()
 
@@ -100,7 +111,8 @@ class MilvusServerConfig:
 
     def verbose_configurable_items(self):
         for key, val in self.configurable_items.items():
-            self.logger.debug('Configurable item %s with default: %s', key, val)
+            self.logger.debug(
+                'Configurable item %s with default: %s', key, val)
 
     def resolve(self):
         self.cleanup_listen_ports()
@@ -108,22 +120,26 @@ class MilvusServerConfig:
         self.resolve_storage()
         for key, value in self.configurable_items.items():
             if value is None:
-                raise RuntimeError(f'{key} is still not resolved, please try specify one.')
+                raise RuntimeError(
+                    f'{key} is still not resolved, please try specify one.')
         # ready to start
         self.cleanup_listen_ports()
         self.write_config()
         self.verbose_configurable_items()
 
     def resolve_all_listen_ports(self):
-        port_keys = list(filter(lambda x: x.endswith('_port'), self.configurable_items.keys()))
+        port_keys = list(filter(lambda x: x.endswith(
+            '_port'), self.configurable_items.keys()))
         for port_key in port_keys:
             if port_key in self.configs:
                 port = int(self.configs.get(port_key))
                 sock = self.try_bind_port(port)
                 if not sock:
-                    raise RuntimeError(f'set {port_key}={port}, but seems you could not bind it')
+                    raise RuntimeError(
+                        f'set {port_key}={port}, but seems you could not bind it')
                 else:
-                    self.logger.debug('bind port %d success, using it as %s', port, port_key)
+                    self.logger.debug(
+                        'bind port %d success, using it as %s', port, port_key)
                 self.listen_ports[port_key] = (port, sock)
             else:
                 port_start = self.configurable_items[port_key] or self.RANDOM_PORT_START
@@ -133,7 +149,8 @@ class MilvusServerConfig:
                     sock = self.try_bind_port(port)
                     if sock:
                         self.listen_ports[port_key] = (port, sock)
-                        self.logger.debug('bind port %d success, using it as %s', port, port_key)
+                        self.logger.debug(
+                            'bind port %d success, using it as %s', port, port_key)
                         break
         for port_key, data in self.listen_ports.items():
             self.configurable_items[port_key] = data[0]
@@ -160,7 +177,8 @@ class MilvusServerConfig:
         return join(default_dir, '.milvus.io', 'milvus-server')
 
     def resolve_storage(self):
-        self.base_data_dir = self.configs.get('data_dir', self.get_default_data_dir())
+        self.base_data_dir = self.configs.get(
+            'data_dir', self.get_default_data_dir())
         self.base_data_dir = abspath(self.base_data_dir)
         makedirs(self.base_data_dir, exist_ok=True)
         config_dir = join(self.base_data_dir, 'configs')
@@ -171,17 +189,23 @@ class MilvusServerConfig:
 
         # logs
         if sys.platform.lower() == 'win32':
-            self.configurable_items['etcd_log_path'] = 'winfile:///' + join(logs_dir, 'etcd.log').replace('\\', '/')
+            self.configurable_items['etcd_log_path'] = 'winfile:///' + \
+                join(logs_dir, 'etcd.log').replace('\\', '/')
         else:
-            self.configurable_items['etcd_log_path'] = join(logs_dir, 'etcd.log')
+            self.configurable_items['etcd_log_path'] = join(
+                logs_dir, 'etcd.log')
         self.configurable_items['proxy_log_dir'] = logs_dir
         self.configurable_items['proxy_log_name'] = 'proxy.log'
-        self.configurable_items['system_log_path'] = join(logs_dir, 'system.log')
+        self.configurable_items['system_log_path'] = join(
+            logs_dir, 'system.log')
 
         # data
-        self.configurable_items['etcd_data_dir'] = join(storage_dir, 'etcd.data')
-        self.configurable_items['local_storage_dir'] = join(storage_dir, 'storage')
-        self.configurable_items['rocketmq_data_dir'] = join(storage_dir, 'rocketmq')
+        self.configurable_items['etcd_data_dir'] = join(
+            storage_dir, 'etcd.data')
+        self.configurable_items['local_storage_dir'] = join(
+            storage_dir, 'storage')
+        self.configurable_items['rocketmq_data_dir'] = join(
+            storage_dir, 'rocketmq')
 
     def cleanup_listen_ports(self):
         for data in self.listen_ports.values():
@@ -221,7 +245,7 @@ class MilvusServer:
         self.server_proc = None
         self.proc_fds = {}
         self._debug = kwargs.get('debug', False)
-        self.logger = create_logger('debug' if self._debug else 'null')
+        self.logger = _create_logger('debug' if self._debug else 'null')
 
     @classmethod
     def get_milvus_executable_path(cls):
@@ -240,10 +264,18 @@ class MilvusServer:
     def __del__(self):
         self.stop()
 
+    @classmethod
+    def prepend_path_to_envs(cls, envs, name, val):
+        envs.update({name: ':'.join([val, os.environ.get(name, '')])})
+
     def cleanup(self):
         if self.running:
             raise RuntimeError('Server is running')
         shutil.rmtree(self.config.base_data_dir, ignore_errors=True)
+
+    def wait(self):
+        while self.running:
+            sleep(0.1)
 
     def start(self):
         self.config.resolve()
@@ -253,11 +285,14 @@ class MilvusServer:
         envs = os.environ.copy()
         envs.update({'DEPLOY_MODE': 'STANDALONE'})
         if sys.platform.lower() == 'linux':
-            envs.update({'LD_LIBRARY_PATH': f'{dirname(milvus_exe)}:{os.environ.get("LD_LIBRARY_PATH")}'})
+            self.prepend_path_to_envs(
+                envs, 'LD_LIBRARY_PATH', dirname(milvus_exe))
         if sys.platform.lower() == 'darwin':
-            envs.update({'DYLD_LIBRARY_PATH': f'{dirname(milvus_exe)}:{os.environ.get("DYLD_LIBRARY_PATH")}'})
+            self.prepend_path_to_envs(
+                envs, 'DYLD_LIBRARY_PATH', dirname(milvus_exe))
         for name in ('stdout', 'stderr'):
-            self.proc_fds[name] = open(join(self.config.base_data_dir, 'logs', f'milvus-{name}.log'), 'w')
+            self.proc_fds[name] = open(
+                join(self.config.base_data_dir, 'logs', f'milvus-{name}.log'), 'w')
         if self._debug:
             self.server_proc = subprocess.Popen(
                 [milvus_exe, 'run', 'standalone'],
@@ -293,7 +328,19 @@ class MilvusServer:
 
     @property
     def listen_port(self) -> int:
-        return int(self.config.configurable_items.get('proxy_port'))
+        return int(self.config.configurable_items.get('proxy_port', 0))
+
+    @listen_port.setter
+    def listen_port(self, val: int):
+        self.config.configurable_items['proxy_port'] = val
+
+    @property
+    def authorization_enabled(self) -> bool:
+        return self.config.configurable_items.get('authorization_enabled', 'false') == 'true'
+
+    @authorization_enabled.setter
+    def authorization_enabled(self, val: bool):
+        self.config.configurable_items['authorization_enabled'] = 'true' if val else 'false'
 
     @property
     def debug(self):
@@ -302,10 +349,38 @@ class MilvusServer:
     @debug.setter
     def debug(self, val: bool):
         self._debug = val
-        self.logger = create_logger('debug' if val else 'null')
-        self.config.logger = create_logger('debug' if val else 'null')
+        self.logger = _create_logger('debug' if val else 'null')
+        self.config.logger = self.logger
+
+    def apply_config(self, key: str, val: str):
+        if hasattr(self, key):
+            val = type(getattr(self, key))(val)
+            setattr(self, key, val)
+            self.logger.info('set %s=%s', key, val)
 
 
 _initialize_data_files()
 default_server = MilvusServer()
 debug_server = MilvusServer(MilvusServerConfig(), debug=True)
+
+
+def main():
+    parser = ArgumentParser()
+    parser.add_argument('--set', action='append', dest='values')
+    parser.add_argument('--debug', action='store_true',
+                        dest='debug', default=False)
+    args = parser.parse_args()
+
+    server = debug_server if args.debug else default_server
+
+    # apply configs
+    for expression in args.values or []:
+        if '=' in expression:
+            key, val = expression.split('=', 1)
+            key, val = key.strip(), val.strip()
+            server.apply_config(key, val)
+
+    signal.signal(signal.SIGINT, lambda sig, h: server.stop())
+
+    server.start()
+    server.wait()

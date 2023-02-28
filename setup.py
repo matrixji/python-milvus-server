@@ -44,8 +44,10 @@ class CustomBuild(build):
 
     @classmethod
     def copy_bin_data(cls):
-        milvus_server_bin_dir = join(dirname(abspath(__file__)), 'milvus', 'bin')
-        dest_bin_dir = join(dirname(abspath(__file__)), 'milvus_server', 'data', 'bin')
+        milvus_server_bin_dir = join(
+            dirname(abspath(__file__)), 'milvus', 'bin')
+        dest_bin_dir = join(dirname(abspath(__file__)),
+                            'milvus_server', 'data', 'bin')
         shutil.rmtree(dest_bin_dir, ignore_errors=True)
         makedirs(dest_bin_dir, exist_ok=True)
         for filename in listdir(milvus_server_bin_dir):
@@ -69,7 +71,8 @@ class CustomBuild(build):
 setup(name='python-milvus-server',
       version=get_package_version(),
       description='Python Milvus Server',
-      long_description=(pathlib.Path(__file__).parent / 'README.md').read_text(),
+      long_description=(pathlib.Path(__file__).parent /
+                        'README.md').read_text(),
       long_description_content_type='text/markdown',
       author='Ji Bin',
       author_email='matrixji@live.com',
@@ -88,5 +91,11 @@ setup(name='python-milvus-server',
       options={
           'bdist_wheel': {'plat_name': guess_plat_name()}
       },
-      setup_requires=['wheel']
+      install_requires=[],
+      setup_requires=['wheel'],
+      entry_points={
+          'console_scripts': [
+              'milvus-server=milvus_server:main'
+          ]
+      }
       )
