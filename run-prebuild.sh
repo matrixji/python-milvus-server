@@ -146,7 +146,7 @@ function build_linux_x86_64() {
         # build docker for builder
         ## docker build -t matrixji/python-milvus-server-builder:latest ${docker_build_proxys} tools/build-env-manylinux2014
         mkdir -p tmp
-        docker run -u $(id -u):$(id -g) -e HOME=/tmp -e BUILD_ALREADY_IN_DOCKER=YES --rm ${docker_run_proxys} \
+        docker run -u $(id -u):$(id -g) -e HOME=/tmp -e BUILD_ALREADY_IN_DOCKER=YES --rm -ti ${docker_run_proxys} \
             -v$(pwd):/src \
             -v$(pwd)/tmp:/tmp \
             matrixji/python-milvus-server-builder:manylinux2004-1 bash -c "cd /src && bash run-prebuild.sh"
