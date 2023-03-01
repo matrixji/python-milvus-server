@@ -354,7 +354,11 @@ class MilvusServer:
 
     def apply_config(self, key: str, val: str):
         if hasattr(self, key):
-            val = type(getattr(self, key))(val)
+            val_type = type(getattr(self, key))
+            if val_type == bool:
+                val = val.lower() in ('true', 'yes')
+            else:
+                val = type(getattr(self, key))(val)
             setattr(self, key, val)
             self.logger.info('set %s=%s', key, val)
 
