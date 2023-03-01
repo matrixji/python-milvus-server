@@ -369,9 +369,15 @@ def main():
     parser.add_argument('--set', action='append', dest='values')
     parser.add_argument('--debug', action='store_true',
                         dest='debug', default=False)
+    parser.add_argument('--data', dest='data_dir', default='')
     args = parser.parse_args()
 
+    # select server
     server = debug_server if args.debug else default_server
+
+    # set base dir if configured
+    if args.data_dir:
+        server.set_base_dir(args.data_dir)
 
     # apply configs
     for expression in args.values or []:
