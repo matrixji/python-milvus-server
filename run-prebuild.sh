@@ -3,7 +3,7 @@
 ## variables
 
 MILVUS_REPO=${MILVUS_REPO:-https://github.com/milvus-io/milvus.git}
-MILVUS_COMMIT=${MILVUS_COMMIT:-8af2aebb66315717b4ba8a8538f5d8ffbe29e271}
+MILVUS_COMMIT=${MILVUS_COMMIT:-9b8f04fd84840cfeb180a4e723ba2d1f2c8809bd}
 MILVUS_PATCH_NAME=${MILVUS_PATCH_NAME:-master}
 BUILD_PROXY=
 
@@ -155,6 +155,8 @@ function build_linux_x86_64() {
 
 build_macosx_arm64() {
     cd milvus
+    source scripts/setenv.sh
+    export PKG_CONFIG_PATH=${PKG_CONFIG_PATH}:$(brew --prefix openssl)/lib/pkgconfig
     make -j $(sysctl -n hw.physicalcpu) milvus
 
     # resolve dependencies for milvus
