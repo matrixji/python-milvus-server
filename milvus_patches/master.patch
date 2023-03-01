@@ -1,5 +1,5 @@
 diff --git a/internal/core/CMakeLists.txt b/internal/core/CMakeLists.txt
-index d3d084fef..a11f61fea 100644
+index fa565d2fe..7f598cf0b 100644
 --- a/internal/core/CMakeLists.txt
 +++ b/internal/core/CMakeLists.txt
 @@ -27,6 +27,10 @@ add_definitions(-DELPP_THREAD_SAFE)
@@ -26,10 +26,10 @@ index cae7415c9..29cef2aa0 100644
  endif ()
  
 diff --git a/internal/core/src/pb/CMakeLists.txt b/internal/core/src/pb/CMakeLists.txt
-index 3c5ca9f92..eaf2f902f 100644
+index e819d4e9d..23524f14c 100644
 --- a/internal/core/src/pb/CMakeLists.txt
 +++ b/internal/core/src/pb/CMakeLists.txt
-@@ -16,6 +16,8 @@ set( proto_file_names
+@@ -17,6 +17,8 @@ set( proto_file_names
  
  set( PROTO_PATH  "${MILVUS_SOURCE_DIR}/../../cmake_build/thirdparty/milvus-proto/proto/")
  
@@ -38,7 +38,7 @@ index 3c5ca9f92..eaf2f902f 100644
  FOREACH(proto_file ${proto_file_names})
      STRING( REGEX REPLACE "[^/]proto" "" proto_src_file_name ${proto_file} )
      LIST( APPEND milvus_proto_srcs "${proto_src_file_name}.pb.cc" )
-@@ -53,7 +55,12 @@ FOREACH(proto_file ${proto_file_names})
+@@ -54,7 +56,12 @@ FOREACH(proto_file ${proto_file_names})
  
  ENDFOREACH(proto_file)
  
@@ -115,10 +115,10 @@ index 75f81c43e..ffd758812 100644
 +	return os.OpenFile(u.Path[1:], os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0600)
 +}
 diff --git a/scripts/core_build.sh b/scripts/core_build.sh
-index 74372caac..e8e41b84c 100755
+index 092f5b57c..3b6b33abb 100755
 --- a/scripts/core_build.sh
 +++ b/scripts/core_build.sh
-@@ -202,8 +202,49 @@ case "${unameOut}" in
+@@ -206,8 +206,49 @@ case "${unameOut}" in
        conan install ${CPP_SRC_DIR} --install-folder conan --build=missing -s compiler.libcxx=libstdc++11 || { echo 'conan install failed'; exit 1; }
      fi 
      ;;
@@ -160,8 +160,8 @@ index 74372caac..e8e41b84c 100755
 +lib, *.so* -> ../lib
 +
 +EOF
-+    virtualenv venv
-+    venv/bin/pip install conan
++    python3 -m venv venv
++    venv/bin/pip install "conan<2.0"
 +    venv/bin/conan install . --install-folder conan --build=missing --profile msys2_profile
 +    ;;
 +  *)
@@ -170,7 +170,7 @@ index 74372caac..e8e41b84c 100755
      ;;
  esac
  
-@@ -224,6 +265,7 @@ ${CMAKE_EXTRA_ARGS} \
+@@ -228,6 +269,7 @@ ${CMAKE_EXTRA_ARGS} \
  -DEMBEDDED_MILVUS=${EMBEDDED_MILVUS} \
  -DBUILD_DISK_ANN=${BUILD_DISK_ANN} \
  -DUSE_ASAN=${USE_ASAN} \
