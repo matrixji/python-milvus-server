@@ -1,3 +1,3 @@
 #!/bin/sh
 
-pip3 install conan
+pip3 install "conan<2.0"
