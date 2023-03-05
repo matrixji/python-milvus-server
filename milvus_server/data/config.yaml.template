@@ -17,7 +17,7 @@
 # Related configuration of etcd, used to store Milvus metadata & service discovery.
 etcd:
   endpoints:
-    - localhost:{{ etcd_port: 2379 }}
+    - localhost:{{ etcd_port(int): 2379 }}
   rootPath: by-dev # The root path where data is stored in etcd
   metaSubPath: meta # metaRootPath = rootPath + '/' + metaSubPath
   kvSubPath: kv # kvRootPath = rootPath + '/' + kvSubPath
@@ -129,7 +129,7 @@ rocksmq:
 # Related configuration of rootCoord, used to handle data definition language (DDL) and data control language (DCL) requests
 rootCoord:
   address: localhost
-  port: {{ root_coord_port }}
+  port: {{ root_coord_port(int) }}
   enableActiveStandby: false  # Enable active-standby
 
   dmlChannelNum: 256 # The number of dml channels created at system startup
@@ -146,8 +146,8 @@ rootCoord:
 
 # Related configuration of proxy, used to validate client requests and reduce the returned results.
 proxy:
-  port: {{ proxy_port: 19530 }}
-  internalPort: {{ proxy_internal_port: 19529 }}
+  port: {{ proxy_port(int): 19530 }}
+  internalPort: {{ proxy_internal_port(int): 19529 }}
   http:
     enabled: true # Whether to enable the http server
     debug_mode: false # Whether to enable http server debug mode
@@ -176,7 +176,7 @@ proxy:
 # Related configuration of queryCoord, used to manage topology and load balancing for the query nodes, and handoff from growing segments to sealed segments.
 queryCoord:
   address: localhost
-  port: {{ query_coord_port }}
+  port: {{ query_coord_port(int) }}
   autoHandoff: true # Enable auto handoff
   autoBalance: true # Enable auto balance
   overloadedMemoryThresholdPercentage: 90 # The threshold percentage that memory overload
@@ -195,7 +195,7 @@ queryCoord:
 # Related configuration of queryNode, used to run hybrid search between vector and scalar data.
 queryNode:
   cacheSize: 32 # GB, default 32 GB, `cacheSize` is the memory used for caching data for faster query. The `cacheSize` must be less than system memory size.
-  port: {{ query_node_port }}
+  port: {{ query_node_port(int) }}
   loadMemoryUsageFactor: 3 # The multiply factor of calculating the memory usage while loading segments
   enableDisk: true # enable querynode load disk index, and search on disk index
   maxDiskUsagePercentage: 95
@@ -236,7 +236,7 @@ queryNode:
 
 indexCoord:
   address: localhost
-  port: {{ index_coord_port }}
+  port: {{ index_coord_port(int) }}
   enableActiveStandby: false  # Enable active-standby
 
   minSegmentNumRowsToEnableIndex: 1024 # It's a threshold. When the segment num rows is less than this value, the segment will not be indexed
@@ -254,7 +254,7 @@ indexCoord:
     interval: 1000 # scheduler interval in Millisecond
 
 indexNode:
-  port: {{ index_node_port }}
+  port: {{ index_node_port(int) }}
   enableDisk: true # enable index node build disk vector index
   maxDiskUsagePercentage: 95
 
@@ -263,7 +263,7 @@ indexNode:
 
 dataCoord:
   address: localhost
-  port: {{ data_coord_port }}
+  port: {{ data_coord_port(int) }}
   enableCompaction: true # Enable data segment compaction
   enableGarbageCollection: true
   enableActiveStandby: false  # Enable active-standby
@@ -303,7 +303,7 @@ dataCoord:
 
 
 dataNode:
-  port: {{ data_node_port }}
+  port: {{ data_node_port(int) }}
 
   dataSync:
     flowGraph:
@@ -408,14 +408,14 @@ common:
   storageType: local
 
   security:
-    authorizationEnabled: {{ authorization_enabled: false }}
+    authorizationEnabled: {{ authorization_enabled(bool): false }}
     # The superusers will ignore some system check processes,
     # like the old password verification when updating the credential
     # superUsers:
     #  - "root"
     # tls mode values [0, 1, 2]
     # 0 is close, 1 is one-way authentication, 2 is two-way authentication.
-    tlsMode: {{ tls_mode: 0 }}
+    tlsMode: {{ tls_mode(int): 0 }}
 
   session:
     ttl: 60 # ttl value when session granting a lease to register service
