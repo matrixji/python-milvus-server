@@ -190,8 +190,6 @@ class MilvusServerConfig:
     def get_value_text(cls, val) -> str:
         if isinstance(val, bool):
             return 'true' if val else 'false'
-        if isinstance(val, str):
-            return f'"{val}"'
         return str(val)
 
     @classmethod
