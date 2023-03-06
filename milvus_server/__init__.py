@@ -359,7 +359,7 @@ class MilvusServer:
 
     @property
     def listen_port(self) -> int:
-        return int(self.config.get('proxy_port', 0))
+        return int(self.config.get('proxy_port'))
 
     @listen_port.setter
     def listen_port(self, val: int):
