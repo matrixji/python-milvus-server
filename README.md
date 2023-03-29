@@ -1,5 +1,12 @@
 # Python Milvus Server
 
+<h3>
+Note:
+
+- From VERSION 2.2.4, this `matrixji/python-milvus-server` start migrate to [milvus-io/embd-milvus](https://github.com/milvus-io/embd-milvus)
+- And `milvus_server` package name change to `milvus`, for more details see [milvus-io/embd-milvus](https://github.com/milvus-io/embd-milvus)
+</h3>
+
 [![PyPI Version](https://img.shields.io/pypi/v/python-milvus-server.svg)](https://pypi.python.org/pypi/python-milvus-server)
 
 Milvus server started by python
